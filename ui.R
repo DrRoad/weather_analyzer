@@ -2,57 +2,49 @@ source("server.R")
 
 shinyUI(
 	navbarPage(
-	"Weather Explorer",
-	
-	tabPanel(
-		"Ayah",
-		sidebarLayout(
-			sidebarPanel(
-				verbatimTextOutput("example1")
-			),
-			mainPanel(
-				verbatimTextOutput("example2")
+		"Weather Explorer",
+		
+		tabPanel(
+			"Ayah",
+			sidebarLayout(
+				sidebarPanel(),
+				mainPanel(
+					textOutput("example1")
+				)
 			)
-		)
-	),
-	
-	tabPanel(
-		"Arjun",
-		sidebarLayout(
-			sidebarPanel(
-				verbatimTextOutput("example1")
-			),
-			mainPanel(
-				verbatimTextOutput("example2")
+		),
+		
+		tabPanel(
+			"Arjun",
+			sidebarLayout(
+				sidebarPanel(),
+				mainPanel(
+					textOutput("example2")
+				)
 			)
-		)
-	),
-	
-	tabPanel(
-		"April",
-		sidebarLayout(
-			sidebarPanel(
-				verbatimTextOutput("example1")
-			),
-			mainPanel(
-				verbatimTextOutput("example2")
+		),
+		
+		tabPanel(
+			"April",
+			sidebarLayout(
+				sidebarPanel(),
+				mainPanel(
+					textOutput("example3")
+				)
 			)
-		)
-	),
-	
-	tabPanel(
-		"Hemil",
-		sidebarLayout(
-			sidebarPanel(
-				verbatimTextOutput("example1")
-			),
-			mainPanel(
-				verbatimTextOutput("example2")
+		),
+		
+		tabPanel(
+			"Hemil",
+			sidebarLayout(
+				sidebarPanel(),
+				mainPanel(
+					textOutput("example4")
+				)
 			)
-		)
-	),
-	
-	fluid = TRUE,
-	inverse = TRUE
+		),
+		
+		fluid = TRUE,
+		inverse = TRUE
 	)
 )
