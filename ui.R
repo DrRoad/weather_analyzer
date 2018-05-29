@@ -41,7 +41,7 @@ shinyUI(
                             )
                           ),
                           mainPanel(
-                            h3("The three tabs can be used to navigate data regrading Average Land Temperatures."),
+                            h3("The three tabs can be used to navigate data regarding Average Land Temperatures."),
                             h4("On this tab you can choose a country and year of which you'd like to 
                                view average land temperatures. On the plot bellow you will see the country's
                                average temperature over the given year plotted in red and the global average
