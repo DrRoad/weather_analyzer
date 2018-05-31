@@ -41,12 +41,16 @@ shinyUI(
                             )
                           ),
                           mainPanel(
-                            h3("The three tabs can be used to navigate data regarding Average Land Temperatures."),
-                            h4("On this tab you can choose a country and year of which you'd like to 
-                               view average land temperatures. On the plot bellow you will see the country's
-                               average temperature over the given year plotted in red and the global average
-                               temperature plotted in green. At the bottom of the plot you will see some information
-                               about the selected country in the given year."),
+                            h3("The three tabs in this section can be used to navigate data regarding Average Land Temperatures."),
+                            h4("Have you ever wondered how a particular country's average temperature correlates with
+                                the average Global temperature? If yes, then this is the tab for you! On the left,
+                                you can select a country and year that you are interested in. Once selected, you will 
+                                see the chosen country's average temperature plotted over that year displayed
+                                in red and the global average temperature plotted in Green. You can use this to investigate 
+                                countries of your choice. At the bottom of the plot you will see some information
+                                about the selected country in the given year. One would expect to see country's trendline
+                                follow the global average temperatures but, there are many countries that do not have this
+                                trend and can be further investigated in the following tabs."),
                             plotlyOutput("land_plot"),
                             verbatimTextOutput("average_text"),
                             #verbatimTextOutput("min_text"),
@@ -85,9 +89,18 @@ shinyUI(
                             )
                           ),
                           mainPanel(
-                            h4("This tool lets you select a year and a range of temperature values, and displays a table
-                               with the Countries that fell into the range of the average temperatures provided. It also
-                             reports countries that had the highest and lowest average temperature for that given year."),
+                            h4("On this tab you can select a year of interest and a range of temperature values that you are 
+                              interested in exploring and you will see a table with the countries listed in alphabetical order
+                              that fall into that given range. Using information from the previous tab you will be able to seek
+                              out countries that had similar trends to the ones you explored earlier. For example, if you select
+                              the country, Australia on the first tab you will see that its trend over any given year is almost the 
+                              mirror image of the trendline for the global average temperature. This raises the question, maybe countries
+                              that had similar average temperatures as Australia followed this similar trend of having inverted trend lines 
+                              when compared to average global temperatures. So, over here you could
+                              scope out countries with similar average temperatures and then plot them on the previous tab to check 
+                              whether the two countries correlate (Feel free to try this example out!). 
+                              This kind of analysis could potentially be done for any country.
+                              ."),
                             verbatimTextOutput("estimation_text_min"),
                             verbatimTextOutput("esimation_text_max"),
                             tableOutput('table_with_temperature_range')
@@ -110,7 +123,12 @@ shinyUI(
                      
                  ),
                  mainPanel(
-                   h4("This tool can be used to predict average land temperatures in the future"),
+                   h4("This tab can be used to predict average land temperatures in the future because who does not
+                      like to be prepared for a rainy day! On the left you can select a Country of your choice and 
+                      a year that you would like to forcast to. Bellow you will see a scatter plot with average land
+                      temperatures plotted from around 1800 - 2012. Using the range tab one can investigate whether
+                      countries that fall into similar ranges of average temperatures have similar forecasts.
+                      There is more information about the plot bellow!"),
                    plotlyOutput('specific_country_mean_plot'),
                    verbatimTextOutput('forcast_text'), 
                    h5("The predicted Average land temperature was calculated based on the the linear regression model ploted above. 
@@ -127,7 +145,7 @@ shinyUI(
                    h5("The Estimate column has two rows. The first one shows the estimate chosen for the y-intercept and
                       the second one shows the estimated value of the slope . The Std.Error shows the error in these calculated values and then the
                       t columns shows you the t-test associated with testing the significance of the parameter
-                      listed in the first column! The pr(>t) column shows the probability of one getting a value higher than t")
+                      listed in the first column! The pr(>t) column shows the probability of one getting a value higher than t.")
                  )
              )))),
     

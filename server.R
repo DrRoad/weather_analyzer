@@ -91,8 +91,6 @@ shinyServer(function(input, output) {
     specific_country_mean_by_year <- mean_by_year_df %>%
       filter(Country == input$givenCountryPrediction)
     specific_country_mean_by_year <- transform(specific_country_mean_by_year, Years = as.numeric(Years), meanByYear = as.numeric(meanByYear))
-    print(is.numeric(specific_country_mean_by_year$Years))
-    print(is.numeric(specific_country_mean_by_year$meanByYear))
     list("country_mean_data" = specific_country_mean_by_year)
     
   })
@@ -111,7 +109,7 @@ shinyServer(function(input, output) {
   })
   
   output$forcast_text <- renderText({
-    paste("The predicted temperature for the year", input$givenYearForcast, "is", reactive_forcast()[['Prediction']])
+    paste("The predicted average land temperature for the year", input$givenYearForcast, "is", reactive_forcast()[['Prediction']])
   })
   
   output$error_table <- renderTable({
@@ -123,7 +121,7 @@ shinyServer(function(input, output) {
     p <- ggplot(data = reactive_values_3()[["country_mean_data"]], 
                 aes(x = reactive_values_3()[["country_mean_data"]]$Years, 
                     y = reactive_values_3()[["country_mean_data"]]$meanByYear)) + 
-      labs(title = "Scatter Plot showing Average temperatures of selected country from 1900-2012", x = "Average Temperature", y = "Year") +
+      labs(title = "Scatter Plot showing Average temperatures of selected country from 1900-2012", x = "Year", y = "Average Temperature") +
       geom_point() + 
       geom_smooth(method = "lm", col = "red")
     ggplotly(p)
