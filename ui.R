@@ -159,6 +159,21 @@ shinyUI(
 		navbarMenu(
 			"Exploring Seattle",
 				tabPanel(
+					"The Questions",
+					verticalLayout(
+						br(),
+						br(),
+						br(),
+						verbatimTextOutput("sea_question"),
+						tags$head(tags$style(HTML("
+                            #sea_question {
+                              font-size: 20px;
+                            }
+                            "
+						)))
+					)
+				),
+				tabPanel(
 				"The Data",
 				br(),
 				sidebarLayout(
@@ -172,7 +187,7 @@ shinyUI(
   		),
   		
   		tabPanel(
-  			"By Day",
+  			"Patterns By Day",
   			br(),
   			sidebarLayout(
   				sidebarPanel(

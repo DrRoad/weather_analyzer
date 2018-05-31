@@ -201,6 +201,12 @@ shinyServer(
   })
   
   # ---- START OF HEMIL'S CODE ----
+  output$sea_question <- renderText({
+  	paste0(
+  		"1. What are some historical year-long weather patterns for Seattle?\n",
+			"2. Can these patterns accurately predict future weather?\n"
+		)
+  })
   
   # Resets the predict slider to today when pressed
   observeEvent(input$sea_predict_reset, {
