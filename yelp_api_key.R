@@ -1,0 +1,2 @@
+yelp_client_id <- "NHsuEajhyWf_zNETuZIkRg"
+yelp_api_key <- "Bh4AwcmBaChef-KZmxhuqZx5T4Qt9yQP5kWZWx38NMAAh7ljhF0Y7c0nTwM8jvrNTql3uzE8EtL6r_kT2suGFXGhzGyCO35qX0A5LB0DvA3Awag7IauH1wcd5OUOW3Yx"

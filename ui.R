@@ -1,16 +1,11 @@
 source("server.R")
+source("ayah_data.R")
 source("arjun_analysis.R")
 library("shinythemes")
 
 shinyUI(
   navbarPage(
   	"DATAvengers - Weather Analyzer",
-    
-    tabPanel("Ayah",
-             sidebarLayout(sidebarPanel(),
-                           mainPanel(
-                             textOutput("example1")
-                           ))),
     
     tabPanel("Arjun",
              tabsetPanel(
@@ -287,9 +282,58 @@ shinyUI(
   			)
   		)
   	),
+		
+		tabPanel("Ayah",
+		    tabsetPanel(
+		      tabPanel("Local Events!",
+		          mainPanel(
+		            h4("Based on the last section, you were able to few the forecasted weather patterns and chance of rain in Seattle.
+                    If you are a tourist in Seattle or just a Seattlite in need of helpful and current weather-dependent tips,
+		                this is the tab for you! Sometimes it can be difficult to know what to wear or where to go when the gloomy
+		                weather takes over, but in this section you will find a real time forecast of the Rainy City with up to date
+		                events in the area, weather-appropriate activity suggestions, along with some historic data that may help you
+		                decide if the beauty (and trajectory) of the Pacific North West is captivating enough to make your new home!"
+		            ),
+		            br(),
+		            h5("The following table is a current list of upcoming events happening in the Seattle area. Information
+		               courtesy of Yelp!"),
+		            verbatimTextOutput(seattle_events)
+		          )
+		        )
+		      )
+		    ),
+		    tabPanel("What To Wear and Where To Go!",
+		             sidebarLayout(
+		               sidebarPanel(
+		                 selectInput(
+		                   "sea_prediction",
+		                   "Select which day you would like to retrieve suggestions for (number of days from today):",
+		                   forecast_day
+		                 )		                 
+		               ),
+		               mainPanel(
+		                 h4("In the following table you will see suggestions for: what to wear and best sights to see
+		                    on the forecasted day!"),
+		                 tableOutput("table")
+		               )
+		             )
+		      
+		    ),
+		    tabPanel("Industrialization, Global Warming, and Rise in Cost of Living?",
+		             mainPanel(
+		               h4("Over time, data has shown a correlation between the population size increasing and increase in global
+		                  warming; likely as a result of emissions produced by the increasing population."),
+		               br(),
+		               plotOutput(temp),
+		               plotOutput(population),
+		               h4("From the above graph you can see the positive correlation of time with both population size and
+		                  increase temperatures.")
+		             )
+		    )
+		  ),
+		
     
     fluid = TRUE,
     inverse = TRUE,
   	shinyjs::useShinyjs()
   )
-)
