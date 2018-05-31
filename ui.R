@@ -39,116 +39,118 @@ shinyUI(
 			)
 		),
 		
-		tabPanel(
+		navbarMenu(
 			"Exploring Seattle",
-			
-			tabsetPanel(
-				id = "sea_tabs",
-				type = "pills",
-				
-				tabPanel(
-					"The Data",
-					br(),
-					sidebarLayout(
-						sidebarPanel(
-							uiOutput("sea_df_description")
-						),
-						mainPanel(
-							dataTableOutput("sea_df")
-						)
+			tabPanel(
+				"The Data",
+				br(),
+				sidebarLayout(
+					sidebarPanel(
+						uiOutput("sea_df_description")
+					),
+					mainPanel(
+						dataTableOutput("sea_df")
 					)
-				),
-				
-				tabPanel(
-					"By Day",
-					br(),
-					sidebarLayout(
-						sidebarPanel(
-							selectInput(
-								inputId = "sea_day_data",
-								label = "Data to Plot:",
-								choices = c(
-									"Precipitation" = "Precipitation",
-									"Temperature" = "Temp",
-									"Occurrence of Rain" = "Rain"
-								),
-								selected = "Rain"
+				)
+			),
+			
+			tabPanel(
+				"By Day",
+				br(),
+				sidebarLayout(
+					sidebarPanel(
+						selectInput(
+							inputId = "sea_day_data",
+							label = "Data to Plot:",
+							choices = c(
+								"Precipitation" = "Precipitation",
+								"Temperature" = "Temp",
+								"Occurrence of Rain" = "Rain"
 							),
-							checkboxGroupInput(
-								inputId = "sea_day_show",
-								label = "Show:",
-								choices = c(
-									"Max",
-									"Average",
-									"Min"
-								),
-								selected = c(
-									"Average"
-								)
+							selected = "Rain"
+						),
+						checkboxGroupInput(
+							inputId = "sea_day_features",
+							label = "Features:",
+							choices = c(
+								"Smoothed Line" = "spline",
+								"Jagged Line" = "line",
+								"Points" = "point"
 							),
-							checkboxGroupInput(
-								inputId = "sea_day_features",
-								label = "Features:",
-								choices = c(
-									"Smoothed Line" = "spline",
-									"Jagged Line" = "line",
-									"Points" = "point"
-								),
-								selected = c(
-									"spline",
-									"line"
-								)
-							),
-							sliderInput(
-								inputId = "sea_day_dates",
-								label = "Dates:",
-								min = cd_range[1],
-								max = cd_range[2],
-								value = c(
-									cd_range[1],
-									cd_range[2]
-								),
-								timeFormat="%b %d"
-							),
-							sliderInput(
-								inputId = "sea_day_span",
-								label = "Degree of Smoothing",
-								min = 0.05,
-								max = 0.95,
-								value = 0.4,
-								step = 0.05
-							),
-							sliderInput(
-								inputId = "sea_day_samplesize",
-								label = "Number of Points to Sample",
-								min = 0,
-								max = 25548,
-								value = 5000,
-								step = 100
+							selected = c(
+								"spline",
+								"line"
 							)
 						),
-						mainPanel(
-							plotlyOutput("sea_day_plot", height = 550),
-							textOutput("msg")
+						checkboxGroupInput(
+							inputId = "sea_day_show",
+							label = "Line(s) Through:",
+							choices = c(
+								"Max",
+								"Average",
+								"Min"
+							),
+							selected = c(
+								"Average"
+							)
+						),
+						sliderInput(
+							inputId = "sea_day_dates",
+							label = "Dates:",
+							min = cd_range[1],
+							max = cd_range[2],
+							value = c(
+								cd_range[1],
+								cd_range[2]
+							),
+							timeFormat="%b %d"
+						),
+						sliderInput(
+							inputId = "sea_day_span",
+							label = "Degree of Smoothing",
+							min = 0.05,
+							max = 0.95,
+							value = 0.4,
+							step = 0.05
+						),
+						sliderInput(
+							inputId = "sea_day_samplesize",
+							label = "Number of Points to Plot",
+							min = 0,
+							max = 25548,
+							value = 5000,
+							step = 100
 						)
+					),
+					mainPanel(
+						plotlyOutput("sea_day_plot", height = 550),
+						br(),
+						verbatimTextOutput("sea_day_msg")
 					)
-				),
-				
-				tabPanel(
-					"By Month",
-					br(),
-					sidebarLayout(
-						sidebarPanel(),
-						mainPanel()
-					)
-				),
-				
-				tabPanel(
-					"By Year",
-					br(),
-					sidebarLayout(
-						sidebarPanel(),
-						mainPanel()
+				)
+			),
+			
+			tabPanel(
+				"Prediction Model",
+				br(),
+				sidebarLayout(
+					sidebarPanel(
+						sliderInput(
+							"sea_predict_dates",
+							"Choose a Day of 2018 to Week-Forecast:",
+							min = api_date_range[1],
+							max = as.Date(api_date_range[2]) - days(6),
+							value = as.Date(today()),
+							timeFormat="%b %d %Y"
+						),
+						actionButton("sea_predict_reset", "Reset to Today"),
+						br(), br(),
+						textOutput("sea_predict_msg"),
+						br(),
+						verbatimTextOutput("sea_predict_error")
+					),
+					mainPanel(
+						plotlyOutput("sea_predict_plot", height = 650)
 					)
 				)
 			)

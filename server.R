@@ -14,15 +14,320 @@ shinyServer(
 		output$example1 <- renderText({"Sample Text 1"})
 		output$example2 <- renderText({"Sample Text 2"})
 		output$example3 <- renderText({"Sample Text 3"})
-		output$example4 <- renderText({"Sample Text 4"})
 		
+		# Resets the predict slider to today when pressed
+		observeEvent(input$sea_predict_reset, {
+			updateSliderInput(
+				session,
+				"sea_predict_dates",
+				value = as.Date(today())
+			)
+		})
+		
+		# Stores and normalizes all 2018 API data according to the sea_predict slider bounds
+		api_table <- reactive({
+			out <- api_2018 %>% filter(
+					time >= input$sea_predict_dates,
+					time <= as.Date(input$sea_predict_dates) + days(6)
+				) %>% rowwise() %>% mutate(
+					month_day = paste(format(as.Date(time), format = "%b %d"))
+				)
+			out$cd <- as.Date(out$cd)
+			return(out)
+		})
+		
+		# Verbose description for the sea_day plot
+		output$sea_day_msg <- renderText({
+			label <- if(input$sea_day_data == "Temp"){
+				"Temperature"
+			} else {
+				input$sea_day_data
+			}
+			
+			paste0(
+				"The above graph displays ", tolower(label), " data from all days between ",
+				format(as.Date(input$sea_day_dates[1]), format = "%b %d"),
+				" and ",
+				format(as.Date(input$sea_day_dates[2]), format = "%b %d"),
+				" in the past 70 years.\nThe features visible on the graph include the following: ",
+				toString(input$sea_day_features), "."
+			)	
+		})
+		
+		# Partly calculates the percent error (experimental minus theoretical)/experimental
+		# for each prediction series
+		sea_difference <- reactive({
+			compare <- data.frame(sea_predictions()$cdt)
+			compare$max_temp <- 
+				(api_table()$max_temp - sea_predictions()$max_temp_smooth)/api_table()$max_temp
+			compare$min_temp <- 
+				(api_table()$min_temp - sea_predictions()$min_temp_smooth)/api_table()$min_temp
+			compare$pct_precip <- 
+				(api_table()$pct_precip - sea_predictions()$pct_precip_smooth)/api_table()$pct_precip
+			compare$inch_precip <- 
+				(api_table()$inch_precip - sea_predictions()$inch_precip_smooth)/api_table()$inch_precip
+			
+			return(compare)
+		})
+		
+		# Stores loess-smoothed predictions for each prediction series
+		sea_predictions <- reactive({
+			df <- api_table() %>% select(month_day, cd)
+			colnames(df) <- c("month_day", "cdt")
+			
+			smoothness <- 0.5
+			df$index <- 1:nrow(df)
+			
+			means <- seattle_rain_df %>% group_by(cd) %>% summarize(
+				Max_Temp = mean(Max_Temp),
+				Min_Temp = mean(Min_Temp),
+				Inches_Precip = mean(Precipitation),
+				Pct_Precip = sum(Did_Rain) / length(Did_Rain)
+			)
+			
+			means <- means[means$cd %in% as.Date(df$cdt),]
+
+			df$max_temp_raw <- means$Max_Temp
+			df$min_temp_raw <- means$Min_Temp
+			df$inch_precip_raw <- means$Inches_Precip
+			df$pct_precip_raw <- means$Pct_Precip
+			
+			df$max_temp_smooth <- predict(loess(
+				max_temp_raw ~ index,
+				data = df,
+				span = smoothness
+			))
+			
+			df$min_temp_smooth <- predict(loess(
+				min_temp_raw ~ index,
+				data = df,
+				span = smoothness
+			))
+			
+			df$pct_precip_smooth <- predict(loess(
+				pct_precip_raw ~ index,
+				data = df,
+				span = smoothness
+			))
+			
+			df$inch_precip_smooth <- predict(loess(
+				inch_precip_raw ~ index,
+				data = df,
+				span = smoothness
+			))
+			
+			df$cdt <- as.Date(df$cdt)
+			
+			return(df)
+		}) 
+		
+		# Finishes calculation for percent error, returns text that associates
+		# each error value with the corresponding series
+		output$sea_predict_error <- renderText({
+			pct_error <- c(
+				100*mean(abs(sea_difference()$max_temp[!is.infinite(sea_difference()$max_temp)])),
+				100*mean(abs(sea_difference()$min_temp[!is.infinite(sea_difference()$min_temp)])),
+				100*mean(abs(sea_difference()$pct_precip[!is.infinite(sea_difference()$pct_precip)])),
+				100*mean(abs(sea_difference()$inch_precip[!is.infinite(sea_difference()$inch_precip)]))
+			)
+			
+			pct_error <- round(pct_error, 4)
+			
+			paste0(
+				"Average Prediction Errors for:\n",
+				"Max Temp       - ", pct_error[1], "%\n",
+				"Min Temp       - ", pct_error[2], "%\n",
+				"Chance of Rain - ", pct_error[3], "%\n",
+				"Inch Rain      - ", pct_error[4], "%\n"
+			)
+		})
+		
+		# Informational message about how to use the sea_predict page
+		output$sea_predict_msg <- renderText({
+			paste0("The graph to the right compares weather predictions made from historical Seattle data to ",
+			"values found from the API. The above slider adjusts the first day of the week for which predictions are calculated.",
+			" Since the API does not provide precipitation predictions for more than a week beyond the current day,",
+			" any selected slider day after today will not predict precipitation.")
+		})
+		
+		# Plot for the predictions
+		output$sea_predict_plot <- renderPlotly({
+			output <- NA
+			
+			# Are there four plots or two?
+			four <- FALSE
+			
+			first_tick <- as.Date(input$sea_predict_dates)
+			year(first_tick) <- 2000
+			
+			max_temp_plot <- plot_ly(
+				api_table(),
+				connectgaps = TRUE,
+				x = ~cd,
+				y = ~max_temp,
+				type = "bar",
+				name = "API Max Temp"
+			) %>% add_trace(
+				data = sea_predictions(),
+				x = ~cdt,
+				y = ~max_temp_smooth,
+				name = "Predicted Max Temp"
+			) %>% layout(
+				barmode = "group",
+				xaxis = list(
+					zeroline = FALSE,
+					showline = TRUE,
+					showgrid = TRUE,
+					tickformat = "%b %d",
+					tick0 = first_tick,
+					dtick = 86400000
+				),
+				yaxis = list(
+					zeroline = FALSE,
+					showline = TRUE,
+					title = "Temperature"
+				),
+				plot_bgcolor = "#f2f2f2"
+			)
+			
+			min_temp_plot <- plot_ly(
+				api_table(),
+				connectgaps = TRUE,
+				x = ~cd,
+				y = ~min_temp,
+				name = "API Min Temp",
+				type = "bar"
+			) %>% add_trace(
+				data = sea_predictions(),
+				x = ~cdt,
+				y = ~min_temp_smooth,
+				name = "Predicted Min Temp"
+			) %>% layout(
+				barmode = "group",
+				xaxis = list(
+					zeroline = FALSE,
+					showline = TRUE,
+					showgrid = TRUE,
+					tickformat = "%b %d",
+					tick0 = first_tick,
+					dtick = 86400000
+				),
+				yaxis = list(
+					zeroline = FALSE,
+					showline = TRUE,
+					title = "Temperature"
+				),
+				plot_bgcolor = "#f2f2f2",
+				title = "<b>My Predictions vs. API Data</b>",
+				showlegend = TRUE,
+				legend = list(
+					orientation = "h",
+					x = 0.5,
+					xanchor = "center",
+					y = -0.1,
+					bgcolor = "#f2f2f2"
+				)
+			)
+			
+			# Add precipitation prediction plots if the slider date is valid
+			if(as.Date(input$sea_predict_dates) <= today()){
+				four <- TRUE
+				pct_precip_plot <- plot_ly(
+					api_table(),
+					connectgaps = TRUE,
+					x = ~cd,
+					y = ~pct_precip,
+					name = "API Chance of Rain",
+					type = "bar"
+				) %>% add_trace(
+					data = sea_predictions(),
+					x = ~cdt,
+					y = ~pct_precip_smooth,
+					name = "Predicted Chance of Rain"
+				) %>% layout(
+					barmode = "group",
+					xaxis = list(
+						zeroline = FALSE,
+						showline = TRUE,
+						showgrid = TRUE,
+						tickformat = "%b %d",
+						tick0 = first_tick,
+						dtick = 86400000
+					),
+					yaxis = list(
+						zeroline = FALSE,
+						showline = TRUE,
+						title = "Percent",
+						tickformat = "%"
+					),
+					plot_bgcolor = "#f2f2f2"
+				)
+				
+				inch_precip_plot <- plot_ly(
+					api_table(),
+					connectgaps = TRUE,
+					x = ~cd,
+					y = ~inch_precip,
+					type = "bar",
+					name = "API Inches of Rain"
+				) %>% add_trace(
+					data = sea_predictions(),
+					x = ~cdt,
+					y = ~inch_precip_smooth,
+					name = "Predicted Inches of Rain"
+				) %>% layout(
+					barmode = "group",
+					xaxis = list(
+						zeroline = FALSE,
+						showline = TRUE,
+						showgrid = TRUE,
+						tickformat = "%b %d",
+						tick0 = first_tick,
+						dtick = 86400000
+					),
+					yaxis = list(
+						zeroline = FALSE,
+						showline = TRUE,
+						title = "Inches of Rain"
+					),
+					plot_bgcolor = "#f2f2f2"
+				)
+			}
+			
+			if(four){
+				output <- subplot(
+					max_temp_plot,
+					min_temp_plot,
+					pct_precip_plot,
+					inch_precip_plot,
+					nrows = 2,
+					titleY = TRUE,
+					titleX = FALSE,
+					shareX = TRUE
+				)
+			} else {
+				output <- subplot(
+					max_temp_plot,
+					min_temp_plot,
+					nrows = 2,
+					titleY = TRUE,
+					titleX = FALSE,
+					shareX = TRUE
+				)
+			}
+			
+			return(output)
+		})
+		
+		# Original CSV for data description page (minimally cleaned)
 		output$sea_df <- renderDataTable(
 			{seattle_rain_df},
 			options = list(
-				pageLength = 11
+				pageLength = 14
 			)
 		)
 		
+		# Text for data description page, refers to API too
 		output$sea_df_description <- renderUI({
 			tagList(
 				"This part of the Weather Analyzer uses a ",
@@ -39,12 +344,25 @@ shinyServer(
 				"Inches of Precipitation, Maximum Temperature, Minimum Temperature, and ",
 				"Did Rain (true/false, depending on whether or not it rained that day).",
 				br(), br(),
-				"The original data, without modification or processing, is viewable to",
+				"The original data, with minimal modification and processing, is viewable to",
 				" the right. Feel free to search specific records, change the page, show",
-				"more entries, or sort any column in increasing or decreasing order."
+				"more entries, or sort any column in increasing or decreasing order.",
+				br(), br(),
+				"Additionally, this part of the Weather Analyzer uses data from the ",
+				"DarkSky Weather ",
+				a("API,",
+					href = "https://darksky.net/dev/docs"
+				), "and as such, is ",
+				a("Powered by DarkSky.",
+					href = "https://darksky.net/poweredby/"
+				),
+				br(), br(),
+				em("Exploring Seattle"), " page created by: Hemil Gajjar"
 			)
 		})
 		
+		# DF used to store all rows from original data frame that are in the
+		# bounds of the date slider
 		sea_df <- reactive({
 			df <- seattle_rain_df %>% filter(
 				cd >= input$sea_day_dates[1],
@@ -53,10 +371,12 @@ shinyServer(
 			return(df)
 		})
 		
-		sampled <- reactive({
+		# DF used to store random samples of sea_df()
+		sea_day_sampled <- reactive({
 			sample_n(sea_df(), input$sea_day_samplesize)
 		})
 		
+		# DF used for storing original and loess-smoothed means/mins/maxes
 		sea_df_stats <- reactive({
 			smoothness <- input$sea_day_span
 			
@@ -125,9 +445,12 @@ shinyServer(
 			return(df)
 		})
 		
+		# DF used for By Day Occurrences of Rain
 		sea_df_rain <- reactive({
 			df <- sea_df() %>% group_by(cd) %>% summarize(
 				pct_rainy_days = sum(Did_Rain) / length(Did_Rain)
+			) %>% rowwise() %>% mutate(
+				month_day = paste(format(as.Date(cd), format = "%b %d"))
 			)
 
 			df$index <- 1:nrow(df)
@@ -142,6 +465,7 @@ shinyServer(
 			return(df)
 		})
 		
+		# Plot for By Day
 		output$sea_day_plot <- renderPlotly({
 			datasource <- input$sea_day_data
 			show <- input$sea_day_show
@@ -226,10 +550,10 @@ shinyServer(
 							x = 0.5,
 							xanchor = "center",
 							y = -0.2,
-							bgcolor = bg_color,
+							bgcolor = "#f2f2f2",
 							traceorder = "reversed"
 						),
-						plot_bgcolor = bg_color
+						plot_bgcolor = "#f2f2f2"
 					)
 				)
 			} else {
@@ -248,7 +572,7 @@ shinyServer(
 				if("point" %in% features){
 					if(datasource == "Temp"){
 						plot <- plot %>% add_trace(
-							data = sampled(),
+							data = sea_day_sampled(),
 							x = ~cd,
 							y = ~Max_Temp,
 							type = "scatter",
@@ -259,7 +583,7 @@ shinyServer(
 								size = 17#, color = point_color
 							)
 						) %>% add_trace(
-							data = sampled(),
+							data = sea_day_sampled(),
 							x = ~cd,
 							y = ~Min_Temp,
 							type = "scatter",
@@ -272,7 +596,7 @@ shinyServer(
 						)
 					} else {
 						plot <- plot %>% add_trace(
-							data = sampled(),
+							data = sea_day_sampled(),
 							x = ~cd,
 							y = ~Precipitation,
 							type = "scatter",
@@ -292,10 +616,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_max_Max_Temp,
-							name = "Highest Temps",
+							name = "Highest Temps Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -304,10 +628,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_mean_Max_Temp,
-							name = "Average High",
+							name = "Average High Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -316,10 +640,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_mean_Temp,
-							name = "Average Temp",
+							name = "Average Temp Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -328,10 +652,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_mean_Min_Temp,
-							name = "Average Low",
+							name = "Average Low Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -340,10 +664,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_min_Min_Temp,
-							name = "Lowest Temps",
+							name = "Lowest Temps Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -352,10 +676,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_max_Precipitation,
-							name = "Max",
+							name = "Max Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -364,10 +688,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_mean_Precipitation,
-							name = "Average",
+							name = "Average Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -376,10 +700,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~line_min_Precipitation,
-							name = "Min",
+							name = "Min Jagged",
 							line = list(
 								shape = "linear",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -391,10 +715,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_max_Max_Temp,
-							name = "Highest Temps",
+							name = "Highest Temps Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -403,10 +727,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_mean_Max_Temp,
-							name = "Average High",
+							name = "Average High Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -415,10 +739,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_mean_Temp,
-							name = "Average Temp",
+							name = "Average Temp Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -427,10 +751,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_mean_Min_Temp,
-							name = "Average Low",
+							name = "Average Low Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -439,10 +763,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_min_Min_Temp,
-							name = "Lowest Temps",
+							name = "Lowest Temps Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -451,10 +775,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_max_Precipitation,
-							name = "Max",
+							name = "Max Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -463,10 +787,10 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_mean_Precipitation,
-							name = "Average",
+							name = "Average Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
@@ -475,21 +799,58 @@ shinyServer(
 							data = sea_df_stats(),
 							x = ~cd,
 							y = ~spline_min_Precipitation,
-							name = "Min",
+							name = "Min Smooth",
 							line = list(
 								shape = "spline",
-								width = 3#, color = line_color
+								width = 3
 							)
 						)
 					}
 				}
 				
-				return(plot)
+				ytitles <- c("Inches", "Degrees (F)")
+				ytitle <- NA
+				if(datasource == "Temp"){
+					ytitle <- ytitles[2]
+				} else {
+					ytitle <- ytitles[1]
+				}
+				
+				return(plot %>% layout(
+						title = paste0("<b>Historical ", datasource, " Data Per Day of the Year</b>"),
+						yaxis = list(
+							title = paste0("<b>", ytitle, "</b>"),
+							showgrid = TRUE,
+							zeroline = FALSE,
+							showline = TRUE
+						),
+						xaxis = list(
+							zeroline = FALSE,
+							showline = TRUE,
+							showgrid = TRUE,
+							tickformat = "%b %d",
+							tick0 = "2000-01-01",
+							dtick = "M1",
+							title = "<b>Day of Year</b>",
+							nticks = 13
+						),
+						showlegend = TRUE,
+						legend = list(
+							orientation = "h",
+							x = 0.5,
+							xanchor = "center",
+							y = -0.2,
+							bgcolor = "#f2f2f2",
+							traceorder = "reversed"
+						),
+						plot_bgcolor = "#f2f2f2"
+					)
+				)
 			}
 		})
 		
-		output$msg <- renderText("This is dope")
-		
+		# This observe block changes the stepsize for the samplesize
+		# slider when necessary
 		observe({
 			numrows <- nrow(sea_df())
 			stepsize <- 500
@@ -506,8 +867,12 @@ shinyServer(
 			)
 		})
 		
-		n <- reactiveVal(3)
+		# Tracks the size of the show checkboxgroupinput
+		# (useful when updating its choices)
+		sea_size_show <- reactiveVal(3)
 		
+		# This observe block handles selection, deselection, state (enabled/disabled),
+		# and most dependencies for the checkboxinputs
 		observe({
 			if(input$sea_day_data != "Rain"){
 				point_in_features <- "point" %in% input$sea_day_features
@@ -516,8 +881,8 @@ shinyServer(
 				spline_in_features <- "spline" %in% input$sea_day_features
 				line_in_features <- "line" %in% input$sea_day_features
 				
-				if(input$sea_day_data == "Temp" & n() == 3){
-					n(4)
+				if(input$sea_day_data == "Temp" & sea_size_show() == 3){
+					sea_size_show(4)
 					updateCheckboxGroupInput(
 						session,
 						"sea_day_show",
@@ -530,8 +895,8 @@ shinyServer(
 						),
 						selected = c()
 					)
-				} else if(input$sea_day_data == "Precipitation" & n() == 4){	
-					n(3)
+				} else if(input$sea_day_data == "Precipitation" & sea_size_show() == 4){	
+					sea_size_show(3)
 					updateCheckboxGroupInput(
 						session,
 						"sea_day_show",
@@ -593,5 +958,8 @@ shinyServer(
 				shinyjs::disable("sea_day_samplesize")
 			}
 		})
+		
+		# To avoid verbose messages
+		options(warn = -1)
 	}
 )
