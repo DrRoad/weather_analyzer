@@ -1,0 +1,12 @@
+name: weather_analyzer
+title: weather_analyzer
+username:
+account: hemilg
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 351831
+bundleId: 1403043
+url: https://hemilg.shinyapps.io/weather_analyzer/
+when: 1527785247.73179
+asMultiple: FALSE
+asStatic: FALSE
