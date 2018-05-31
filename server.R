@@ -1156,6 +1156,29 @@ shinyServer(
   options(warn = -1)
   
   # ---- END OF HEMIL'S CODE ----
+
+  output$events <- renderTable({
+    seattle_events
+  })
+  
+  output$table <- renderTable({
+    if (input$sea_predictions()$pct_precip_smooth[input$forecast_day] < 30){
+      print(will_it_rain <- will_it_rain[1,])
+    } else if (input$sea_predictions()$pct_precip_smooth[input$forecast_day] >= 30 & 
+               input$sea_predictions()$pct_precip_smooth[input$forecast_day] < 60){
+      print(will_it_rain <- will_it_rain[2,])
+    } else {
+      print(will_it_rain <- will_it_rain[3,])
+    }
+  })
+  
+  output$temperature <- renderPlot({
+    temp
+  })
+  
+  output$populations <- renderPlot({
+    pop
+  })
   
 	}
 )

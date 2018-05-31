@@ -6,7 +6,7 @@ library(knitr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-source("./api_keys.R")
+source("./ayah_api_keys.R")
 
 # GET current Seattle events and details
 yelp_base_uri <- "https://api.yelp.com/v3/"
@@ -24,7 +24,7 @@ colnames(seattle_events) <- c("Category", "Event Name", "Description", "Address"
 
 View(seattle_events)
 
-#
+
 sygic_base_uri <- "https://api.sygictravelapi.com/1.0/en/"
 sygic_resource <- "places/list"
 sygic_query_params <- list(categories = "sightseeing", level = "city", lang = "en")
