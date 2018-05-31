@@ -5,9 +5,9 @@ library(tidyr)
 library(shiny)
 
 #load humidity and temperature.csv
-humidity <- read.csv("humidity.csv")
+humidity <- read.csv("data/apr_humidity.csv")
 #View(humidity)
-temperature <- read.csv("temperature.csv")
+temperature <- read.csv("data/apr_temperature.csv")
 #View(temperature)
 
 
@@ -17,8 +17,6 @@ humidity <- humidity %>%
   gather(city,humidity, Portland:Boston) %>% 
   separate(datetime, c("date", "time"),sep = " ") %>% 
   na.omit()
-
-    
 
 #get long temperature data for US cities
 temperature <- temperature %>% 
@@ -30,4 +28,3 @@ temperature <- temperature %>%
 #join two data
 humi_temp<- left_join(humidity,temperature, by = c('date', 'time', 'city'))
 #View(humi_temp)
-

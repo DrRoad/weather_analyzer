@@ -104,7 +104,7 @@ year <- c(2010, 2011, 2012, 2013, 2014, 2015, 2016)
 temperature <- data.frame(year, temperature_averages)
 View(temperature)
 
-temperature <- ggplot() +
+temp <- ggplot() +
   geom_point(temperature, mapping = aes(x = year, y = temperature_averages, color = temperature_averages)) 
-population <- ggplot() +
+pop <- ggplot() +
   geom_point(population, mapping = aes(x = year, y = population, color = population))

@@ -1,4 +1,4 @@
-source("sea_key.R")
+source("keys/sea_key.R")
 
 # Cleaning the Seattle CSV
 seattle_rain_df <- read.csv(
