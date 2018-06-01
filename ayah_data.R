@@ -6,7 +6,7 @@ library(knitr)
 library(dplyr)
 library(ggplot2)
 library(tidyr)
-source("./ayah_api_keys.R")
+source("keys/ayah_api_keys.R")
 
 # GET current Seattle events and details
 yelp_base_uri <- "https://api.yelp.com/v3/"
@@ -22,7 +22,7 @@ seattle_events <- flatten(seattle_events) %>% as.data.frame() %>%
 colnames(seattle_events) <- c("Category", "Event Name", "Description", "Address", "Start Time", "End Time", "Cost",
                        "Has the event been canceled?", "Event Site URL")
 
-View(seattle_events)
+#View(seattle_events)
 
 
 sygic_base_uri <- "https://api.sygictravelapi.com/1.0/en/"
@@ -35,42 +35,40 @@ sygic_parsed_data <- fromJSON(sygic_body)
 sightseeing <- sygic_parsed_data$data$places
 sightseeing <- flatten(sightseeing) %>% as.data.frame()
 
-View(sightseeing)
+#View(sightseeing)
 
-"What To Wear" <- c("Bust out those flip flops and shorts cause it looks like it's not going to rain 
-                  in this rainy city!", "Looks like there's a chance of rain in the rainy city. Be sure to carry around 
-                  a light rain coat or umbrella as you explore the rainy city!", "Uh oh, it looks like there's a good 
-                  chance of rain in the rainy city. Be sure not to leave the house without a raincoat or umbrella handy 
-                  in true Seattle fashion!")
+What_To_Wear <- c(
+	"Bust out those flip flops and shorts cause it looks like it's not going to rain in this rainy city!",
+	"Looks like there's a chance of rain in the rainy city. Be sure to carry around a light rain coat or umbrella as you explore the rainy city!",
+	"Uh oh, it looks like there's a good chance of rain in the rainy city. Be sure not to leave the house without a raincoat or umbrella handy in true Seattle fashion!"
+)
 
-"Suggested Activities" <- c("Use this opportunity of dry weather to explore the beautiful Pacific Northwest. Go on hikes, 
-                  visit the Space Needle, explore Pike Place Market, and hang out at Alki Beach.", "This is a great opportunity to visit some of the
-                  indoor sights like the Museum of Pop Culture (MoPOP), the Starbucks Roastery, the Chihuly Garden 
-                  and Glass Museum, the beautiful Central Public Library, or the Seattle Aquarium.", "This is a great
-                  opportunity to explore the local museums and spend a relaxing vacation indoors at one of
-                  Seattle's popular coffee shops like a true Seattlite.")
+Suggested_Activities <- c(
+	"Use this opportunity of dry weather to explore the beautiful Pacific Northwest. Go on hikes, visit the Space Needle, explore Pike Place Market, and hang out at Alki Beach.",
+	"This is a great opportunity to visit some of the indoor sights like the Museum of Pop Culture (MoPOP), the Starbucks Roastery, the Chihuly Garden and Glass Museum, the beautiful Central Public Library, or the Seattle Aquarium.",
+	"This is a great opportunity to explore the local museums and spend a relaxing vacation indoors at one of Seattle's popular coffee shops like a true Seattlite."
+)
 
-"Explore The City" <- c("Check out
-                       https://www.tripadvisor.com/Attractions-g60878-Activities-c61-Seattle_Washington.html for a list of 
-                       fun outdoor activties and https://www.switchbacktravel.com/great-day-hikes-near-seattle for a great 
-                      list of day hikes.", "If it looks like it's going to rain, check out 
-                      https://www.yelp.com/search?find_desc=things+to+do+on+a+rainy+day&find_loc=Seattle%2C+WA for more
-                      rainy day activities.", "Check out 
-                      https://seattle.eater.com/maps/essential-coffee-cafe-seattle for an extensive list of 'essential' 
-                      Seattle cafes. Check out 
-                      https://www.yelp.com/search?find_desc=things+to+do+on+a+rainy+day&find_loc=Seattle%2C+WA for more
-                      rainy day activities.")
+Explore_The_City <- c(
+	"Check out https://www.tripadvisor.com/Attractions-g60878-Activities-c61-Seattle_Washington.html for a list of fun outdoor activties and https://www.switchbacktravel.com/great-day-hikes-near-seattle for a great list of day hikes.",
+	"If it looks like it's going to rain, check out https://www.yelp.com/search?find_desc=things+to+do+on+a+rainy+day&find_loc=Seattle%2C+WA for more rainy day activities.",
+	"Check out  https://seattle.eater.com/maps/essential-coffee-cafe-seattle for an extensive list of 'essential' Seattle cafes. Check out https://www.yelp.com/search?find_desc=things+to+do+on+a+rainy+day&find_loc=Seattle%2C+WA for more rainy day activities."
+)
 
-"Seattle's Must-See Sights" <- c("Check out this link to see Seattle's Top 25 Things To Do
-                        https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/.", "Check out this link 
-                        to see Seattle's Top 25 Things To Do
-                        https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/.", "Check out this link 
-                        to see Seattle's Top 25 Things To Do
-                        https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/.")
+Must_See_Sights <- c(
+	"Check out this link to see Seattle's Top 25 Things To Do https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/.",
+	"Check out this link to see Seattle's Top 25 Things To Do https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/.",
+	"Check out this link to see Seattle's Top 25 Things To Do https://www.visitseattle.org/things-to-do/sightseeing/top-25-attractions/."
+)
 
-will_it_rain <- data.frame(`What To Wear`, `Suggested Activities`, `Explore The City`, `Seattle's Must-See Sights`)
+will_it_rain <- data.frame(list(
+	"What To Wear" = What_To_Wear,
+	"Suggested Activities" = Suggested_Activities,
+	"Explore The City" = Explore_The_City,
+	"Must See Sights" = Must_See_Sights
+))
 
-forecast_day <- c(1:7)
+forecast_days <- c(1:7)
 suggestions <- function(sea_day_predict) {
 if (sea_day_predict < 30){
   print(statement <- "LITTLE chance of rain today!")
@@ -93,7 +91,7 @@ colnames(population) <- c("2010", "2011", "2012", "2013",
                           "2014", "2015", "2016")
 population <- gather(population, key = year, value = population)
 population <- filter(population, year != "City")
-View(population)
+#View(population)
 
 temperature <- read.csv("./seattleWeather_2010-2016.csv", stringsAsFactors = FALSE)
 temperature <- mutate(temperature, average_temp = (TMAX+TMIN)/2) %>% select(DATE, average_temp)
@@ -102,9 +100,9 @@ temperature_averages <- c((mean(temperature[1:365, 2])), (mean(temperature[366:7
                           (mean(temperature[2192:2557, 2])))
 year <- c(2010, 2011, 2012, 2013, 2014, 2015, 2016)
 temperature <- data.frame(year, temperature_averages)
-View(temperature)
+#View(temperature)
 
-temp <- ggplot() +
+ayah_temp <- ggplot() +
   geom_point(temperature, mapping = aes(x = year, y = temperature_averages, color = temperature_averages)) 
-pop <- ggplot() +
+ayah_pop <- ggplot() +
   geom_point(population, mapping = aes(x = year, y = population, color = population))
