@@ -20,4 +20,4 @@ The questions we aim to answer are:
 3. Using forecast predictions, what is the appropriate gear to wear and what activities are suitable for the Seattle weather?
 4. What is the relationship between population size and temperature in Seattle?
 
-*The Weather Analyzer* is hosted at: https://hemilg.shinyapps.io/weather_analyzer/.
+**The Weather Analyzer is hosted at: https://hemilg.shinyapps.io/weather_analyzer/.**
