@@ -83,7 +83,7 @@ if (sea_day_predict < 30){
 }
 
 
-population <- read.csv("./seattle_population_estimates.csv", stringsAsFactors = FALSE)
+population <- read.csv("data/seattle_population_estimates.csv", stringsAsFactors = FALSE)
 population <- filter(population, NAME == "Seattle city" & COUNTY == 33)
 population <- population %>% select(POPESTIMATE2010, POPESTIMATE2011, POPESTIMATE2012, POPESTIMATE2013,
                                         POPESTIMATE2014, POPESTIMATE2015, POPESTIMATE2016)
@@ -93,7 +93,7 @@ population <- gather(population, key = year, value = population)
 population <- filter(population, year != "City")
 #View(population)
 
-temperature <- read.csv("./seattleWeather_2010-2016.csv", stringsAsFactors = FALSE)
+temperature <- read.csv("data/seattleWeather_2010-2016.csv", stringsAsFactors = FALSE)
 temperature <- mutate(temperature, average_temp = (TMAX+TMIN)/2) %>% select(DATE, average_temp)
 temperature_averages <- c((mean(temperature[1:365, 2])), (mean(temperature[366:730, 2])), (mean(temperature[731:1096, 2])),
                           (mean(temperature[1097:1461, 2])), (mean(temperature[1462:1826, 2])), (mean(temperature[1827:2191, 2])),
